@@ -1,8 +1,8 @@
-(ns crowberry.helpers-test
+(ns lumberg.helpers-test
   (:require [clojure.test :refer :all]
-            [crowberry.helpers :refer :all]
-            [crowberry.core :as core]
-            [crowberry.test-util :as test-util]))
+            [lumberg.helpers :refer :all]
+            [lumberg.core :as core]
+            [lumberg.test-util :as test-util]))
 
 (deftest token-substitution
   (testing "Make sure tokens are substituted in output at the right place"

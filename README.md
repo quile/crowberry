@@ -1,4 +1,4 @@
-# crowberry
+# lumberg
 
 Page resource handling for caribou (although it's just
 a ring handler and can work with any ring application).

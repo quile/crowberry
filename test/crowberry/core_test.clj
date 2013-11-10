@@ -1,7 +1,7 @@
-(ns crowberry.core-test
+(ns lumberg.core-test
   (:require [clojure.test :refer :all]
-            [crowberry.core :refer :all]
-            [crowberry.test-util :as test-util]))
+            [lumberg.core :refer :all]
+            [lumberg.test-util :as test-util]))
 
 (comment (deftest a-test
   (testing "FIXME, I fail."

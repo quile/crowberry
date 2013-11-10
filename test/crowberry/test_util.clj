@@ -1,5 +1,5 @@
-(ns crowberry.test-util
-  (:require [crowberry.core :as core]))
+(ns lumberg.test-util
+  (:require [lumberg.core :as core]))
 
 (defn harness
   [f]

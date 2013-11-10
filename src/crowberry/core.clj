@@ -13,9 +13,9 @@
 ;;; This represents a javascript that is to be pulled into the page
 (defrecord ScriptResource [path opts]
   HTML
-  (tag [pa]
+  (tag [p]
     (str "<script type=\"text/javascript\" "
-         "src=\"" (:path pa) "\">")))
+         "src=\"" (:path p) "\">")))
 
 ;;; This represents a stylesheet that is to be pulled into the page
 (defrecord StylesheetResource [path opts]
@@ -40,12 +40,14 @@
      resolutions)))
 
 (defn wrap-page-resources
+  "Ring handler middleware to enable page resource handling"
   [handler]
   (fn [request]
     (binding [*page-resources* (fresh-resource-collection)]
       (let [response (handler request)]
-        (println "... inserting page-resources into page")
-        response))))
+        (if-let [body (:body response)]
+          (assoc response :body (replace-tokens body))
+          response)))))
 
 (defn add-resource
   ([resource-type resource] (add-resource resource-type resource {}))
@@ -69,15 +71,25 @@
      (fn [s t p]
        (update-in s [t] rem p)) resource-type path)))
 
+(defn has-resource?
+  [resource-type path]
+  (let [resources (get @*page-resources* resource-type)
+        found (filter #(= path (:path %)) resources)]
+    (> (count found) 0)))
+
 (defn add-token-handler
   [token handler]
   (swap! *page-resources* assoc-in [:tokens token] handler))
 
+(defn matching
+  [predicate]
+  (let [all (concat (:stylesheet @*page-resources*) (:javascript @*page-resources*))]
+    (filter #(predicate (:opts %)) all)))
+
 (defn ->html
   ([] (->html (fn [x] (constantly true))))
   ([predicate]
-   (let [all (concat (:stylesheet @*page-resources*) (:javascript @*page-resources*))
-         filtered (filter #(predicate (:opts %)) all)
+   (let [filtered (matching predicate)
          tags (map tag filtered)]
      (string/join "\n" tags))))
 

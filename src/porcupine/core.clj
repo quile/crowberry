@@ -15,13 +15,19 @@
   HTML
   (tag [p]
     (str "<script type=\"text/javascript\" "
-         "src=\"" (:path p) "\">")))
+         "src=\"" (:path p) "\"></script>")))
 
 ;;; This represents a stylesheet that is to be pulled into the page
 (defrecord StylesheetResource [path opts]
   HTML
   (tag [p]
     (str "<link rel=\"stylesheet\" href=\"" (:path p) "\">")))
+
+;;; This represents a favicon
+(defrecord ShortcutIconResource [path opts]
+  HTML
+  (tag [p]
+       (str "<link rel=\"shortcut icon\" href=\"" (:path p) "\">")))
 
 (defn fresh-resource-collection
   "Returns a new empty collection of page resources"
@@ -49,9 +55,11 @@
   (fn [request]
     (binding [*page-resources* (fresh-resource-collection)]
       (let [response (handler request)]
-        (println @*page-resources*)
+        ;(println response)
         (if-let [body (:body response)]
-          (assoc response :body (replace-tokens body))
+          (let [new-response (assoc response :body (replace-tokens body))]
+            ;(println new-response)
+            new-response)
           response)))))
 
 (defn add-resource
@@ -61,9 +69,11 @@
                                :footer
                                :header)}
          mopts (merge defaults (assoc opts :type resource-type))
-         resource-record (if (= resource-type :javascript)
-                        (ScriptResource. resource mopts)
-                        (StylesheetResource. resource mopts))]
+         resource-record (condp = resource-type
+                           :javascript (ScriptResource. resource mopts)
+                           :stylesheet (StylesheetResource. resource mopts)
+                           :shortcut (ShortcutIconResource. resource mopts)
+                           :shortcut-icon (ShortcutIconResource. resource mopts))]
      (swap! *page-resources*
       (fn thingy [s t p]
         (update-in s [t] conj p)) resource-type resource-record))))
@@ -103,21 +113,6 @@
 (defn ->footer-html     [] (->html (fn [x] (= :footer (:location x)))))
 (defn ->javascript-html [] (->html (fn [x] (= :javascript (:type x)))))
 (defn ->stylesheet-html [] (->html (fn [x] (= :stylesheet (:type x)))))
-
-(defn foo []
-  (binding [*page-resources* (fresh-resource-collection)]
-    (add-resource :javascript "banana/foo")
-    (add-resource :javascript "zing/foo")
-    (add-resource :javascript "bonk/foo")
-    (add-resource :javascript "zing/foo" {:location :footer})
-    (add-resource :stylesheet "banana/foo")
-    (add-resource :stylesheet "zingbag/foo")
-    (remove-resource :stylesheet "banana/foo")
-    (remove-resource :stylesheet "bonk/foo")
-    (remove-resource :javascript "bonk/foo")
-    (->footer-html)))
-
-(foo)
 
 (comment
   (binding [core/*page-resources* (core/fresh-resource-collection)]

@@ -22,10 +22,10 @@
                     expected "<html><head>
 <link rel=\"stylesheet\" href=\"zing/zong.css\">
 <link rel=\"stylesheet\" href=\"zing/zang.css\">
-<script type=\"text/javascript\" src=\"bing/BING!.js\"></head>
+<script type=\"text/javascript\" src=\"bing/BING!.js\"></script></head>
 <body>blah blah
 <link rel=\"stylesheet\" href=\"zing/ZING!.css\">
-<script type=\"text/javascript\" src=\"bing/bong.js\">
-<script type=\"text/javascript\" src=\"bing/bang.js\"></body></html>"]
+<script type=\"text/javascript\" src=\"bing/bong.js\"></script>
+<script type=\"text/javascript\" src=\"bing/bang.js\"></script></body></html>"]
                 (is (= final expected)))))))
 

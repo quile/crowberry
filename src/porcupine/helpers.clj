@@ -19,7 +19,8 @@
    resources into the results HTML *after* the HTML has been fully
    rendered."
   []
-  {:javascript-resources javascript-resources
+  {:add-resource (fn [& args] (apply porcupine/add-resource args) "<!-- added -->")
+   :javascript-resources javascript-resources
    :stylesheet-resources stylesheet-resources
    :header-resources header-resources
    :footer-resources footer-resources

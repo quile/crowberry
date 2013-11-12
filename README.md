@@ -78,6 +78,7 @@ will result in this:
     ...
   </body>
 </html>
+```
 
 Note that the positions of the calls to __add-resource__ are not relevant,
 and that the resources are injected at the place where __{{{all-resources}}}__

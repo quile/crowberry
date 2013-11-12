@@ -38,7 +38,7 @@
 
 (defn token-format
   [token]
-  (str "<!!!" token "!!!>"))
+  (str "[!!!" token "!!!]"))
 
 (defn replace-tokens
   [source]

@@ -2,6 +2,9 @@
   (:require [porcupine.core :as porcupine]))
 
 (defn token-handler
+  "Creates a token handler that will resolve the mapping
+   between a generated token and the actual resources that
+   need to be injected into the template."
   [handler]
   (let [token (str (java.util.UUID/randomUUID))]
     (porcupine/add-token-handler token handler)

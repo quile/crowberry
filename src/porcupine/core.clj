@@ -27,20 +27,23 @@
 (defrecord ShortcutIconResource [path opts]
   HTML
   (tag [p]
-       (str "<link rel=\"shortcut icon\" href=\"" (:path p) "\">")))
+       (str "<link rel=\"icon\" href=\"" (:path p) "\">")))
 
 (defn fresh-resource-collection
   "Returns a new empty collection of page resources"
   []
   (atom {:javascript (ordered/ordered-set)
          :stylesheet (ordered/ordered-set)
+         :icon (ordered/ordered-set)
          :tokens {}}))
 
 (defn token-format
+  "This is how resources are injected into HTML, to be replaced after rendering."
   [token]
   (str "[!!!" token "!!!]"))
 
 (defn replace-tokens
+  "Replaces all rendered tokens with resources."
   [source]
   (let [token-map (-> @*page-resources* :tokens seq)
         resolutions (map #(vector (first %) (apply (second %) [])) token-map)]
@@ -55,30 +58,34 @@
   (fn [request]
     (binding [*page-resources* (fresh-resource-collection)]
       (let [response (handler request)]
-        ;(println response)
         (if-let [body (:body response)]
           (let [new-response (assoc response :body (replace-tokens body))]
-            ;(println new-response)
             new-response)
           response)))))
 
 (defn add-resource
+  "Add a resource to the *page-resources* atom."
   ([resource-type resource] (add-resource resource-type resource {}))
   ([resource-type resource opts]
-   (let [defaults {:location (if (= :javascript resource-type)
+   (let [mapped-type (if (or (= :shortcut resource-type)
+                             (= :shortcut-icon resource-type))
+                       :icon
+                       resource-type)
+         defaults {:location (if (= :javascript mapped-type)
                                :footer
                                :header)}
-         mopts (merge defaults (assoc opts :type resource-type))
-         resource-record (condp = resource-type
+         mopts (merge defaults (assoc opts :type mapped-type))
+         resource-record (condp = mapped-type
                            :javascript (ScriptResource. resource mopts)
                            :stylesheet (StylesheetResource. resource mopts)
-                           :shortcut (ShortcutIconResource. resource mopts)
-                           :shortcut-icon (ShortcutIconResource. resource mopts))]
+                           :icon (ShortcutIconResource. resource mopts))]
      (swap! *page-resources*
       (fn thingy [s t p]
-        (update-in s [t] conj p)) resource-type resource-record))))
+        (update-in s [t] conj p)) mapped-type resource-record))))
 
 (defn remove-resource
+  "Remove a resource that's been added already. This can be
+   useful if *things change* during rendering."
   [resource-type path]
   (let [rem (fn [c x]
               (remove #(= (:path %) x) c))]
@@ -87,21 +94,30 @@
        (update-in s [t] rem p)) resource-type path)))
 
 (defn has-resource?
+  "Check if a given resource has been included yet."
   [resource-type path]
   (let [resources (get @*page-resources* resource-type)
         found (filter #(= path (:path %)) resources)]
     (> (count found) 0)))
 
 (defn add-token-handler
+  "Adds a token handler to the atom - a token handler is a function
+   that will be invoked later to resolve the injection of page
+   resources into the page."
   [token handler]
   (swap! *page-resources* assoc-in [:tokens token] handler))
 
 (defn matching
+  "Returns all matching resources in the *page-resources* atom."
   [predicate]
-  (let [all (concat (:stylesheet @*page-resources*) (:javascript @*page-resources*))]
+  (let [all (concat (:stylesheet @*page-resources*)
+                    (:javascript @*page-resources*)
+                    (:icon @*page-resources*))]
     (filter #(predicate (:opts %)) all)))
 
 (defn ->html
+  "Given a predicate, renders all matching resources
+   as HTML tags."
   ([] (->html (fn [x] (constantly true))))
   ([predicate]
    (let [filtered (matching predicate)

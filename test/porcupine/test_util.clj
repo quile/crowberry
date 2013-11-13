@@ -3,5 +3,5 @@
 
 (defn harness
   [f]
-  (binding [core/*page-resources* (core/fresh-resource-collection)]
-    (f)))
+  (let [resources (core/fresh-resource-collection)]
+    (f resources)))

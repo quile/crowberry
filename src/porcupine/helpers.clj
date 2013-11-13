@@ -5,16 +5,16 @@
   "Creates a token handler that will resolve the mapping
    between a generated token and the actual resources that
    need to be injected into the template."
-  [handler]
+  [resources handler]
   (let [token (str (java.util.UUID/randomUUID))]
-    (porcupine/add-token-handler token handler)
+    (porcupine/add-token-handler resources token handler)
     (porcupine/token-format token)))
 
-(defn all-resources [] (token-handler porcupine/->all-html))
-(defn javascript-resources [] (token-handler porcupine/->javascript-html))
-(defn stylesheet-resources [] (token-handler porcupine/->stylesheet-html))
-(defn header-resources [] (token-handler porcupine/->header-html))
-(defn footer-resources [] (token-handler porcupine/->footer-html))
+(defn all-resources [resources] (token-handler resources porcupine/->all-html))
+(defn javascript-resources [resources] (token-handler resources porcupine/->javascript-html))
+(defn stylesheet-resources [resources] (token-handler resources porcupine/->stylesheet-html))
+(defn header-resources [resources] (token-handler resources porcupine/->header-html))
+(defn footer-resources [resources] (token-handler resources porcupine/->footer-html))
 
 (defn all-helpers
   "Merge this in before calling render and these helpers will be

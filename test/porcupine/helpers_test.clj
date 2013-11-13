@@ -6,19 +6,19 @@
 
 (deftest token-substitution
   (testing "Make sure tokens are substituted in output at the right place"
-    (test-util/harness (fn []
-              (core/add-resource :javascript "bing/bong.js")
-              (core/add-resource :javascript "bing/bang.js")
-              (core/add-resource :javascript "bing/BING!.js" {:location :header})
-              (core/add-resource :stylesheet "zing/zong.css")
-              (core/add-resource :stylesheet "zing/zang.css")
-              (core/add-resource :stylesheet "zing/ZING!.css" {:location :footer})
+    (test-util/harness (fn [resources]
+              (core/add-resource resources :javascript "bing/bong.js")
+              (core/add-resource resources :javascript "bing/bang.js")
+              (core/add-resource resources :javascript "bing/BING!.js" {:location :header})
+              (core/add-resource resources :stylesheet "zing/zong.css")
+              (core/add-resource resources :stylesheet "zing/zang.css")
+              (core/add-resource resources :stylesheet "zing/ZING!.css" {:location :footer})
               (let [template (str "<html><head>\n"
-                                  (header-resources)
+                                  (header-resources resources)
                                   "</head>\n<body>blah blah\n"
-                                  (footer-resources)
+                                  (footer-resources resources)
                                   "</body></html>")
-                    final (core/replace-tokens template)
+                    final (core/replace-tokens resources template)
                     expected "<html><head>
 <link rel=\"stylesheet\" href=\"zing/zong.css\">
 <link rel=\"stylesheet\" href=\"zing/zang.css\">

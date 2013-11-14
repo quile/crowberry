@@ -15,10 +15,10 @@
   [handler]
   (fn [request]
     (let [page-resources (porcupine/fresh-resource-collection)
-          curried-helpers (curry-helpers helpers/all-helpers page-resources)
+          curried-helpers (curry-helpers (helpers/all-helpers) page-resources)
           response (handler (merge (assoc request :page-resources page-resources) curried-helpers))]
       (if-let [body (:body response)]
-          (let [new-response (assoc response :body (porcupine/replace-tokens body page-resources))]
+          (let [new-response (assoc response :body (porcupine/replace-tokens page-resources body))]
             new-response)
           response))))
 
@@ -30,4 +30,4 @@
     (-> help! :add-resource (apply [:stylesheet "bandit"]))
     @resources))
 
-(foo)
+;;;(foo)

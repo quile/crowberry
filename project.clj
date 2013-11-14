@@ -1,4 +1,4 @@
-(defproject porcupine "0.0.4"
+(defproject porcupine "0.0.6"
   :description "Manage resources during page rendering"
   :url "https://github.com/quile/porcupine"
   :license {:name "Eclipse Public License"

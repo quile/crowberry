@@ -28,9 +28,7 @@
 (defn fresh-resource-collection
   "Returns a new empty collection of page resources"
   []
-  (atom {:javascript (ordered/ordered-set)
-         :stylesheet (ordered/ordered-set)
-         :icon (ordered/ordered-set)
+  (atom {:resources (ordered/ordered-set)
          :tokens {}}))
 
 (defn token-format
@@ -68,23 +66,25 @@
                            :icon (ShortcutIconResource. resource mopts))]
      (swap! resources
       (fn thingy [s t p]
-        (update-in s [t] conj p)) mapped-type resource-record))))
+        (update-in s [t] conj p)) :resources resource-record))))
 
 (defn remove-resource
   "Remove a resource that's been added already. This can be
    useful if *things change* during rendering."
   [resources resource-type path]
   (let [rem (fn [c x]
-              (remove #(= (:path %) x) c))]
+              (remove #(and (= (-> % :opts :type) resource-type)
+                            (= (:path %) x)) c))]
     (swap! resources
      (fn [s t p]
-       (update-in s [t] rem p)) resource-type path)))
+       (update-in s [t] rem p)) :resources path)))
 
 (defn has-resource?
   "Check if a given resource has been included yet."
   [resources resource-type path]
-  (let [resources (get @resources resource-type)
-        found (filter #(= path (:path %)) resources)]
+  (let [resources (:resources @resources)
+        found (filter #(and (= resource-type (-> % :opts :type))
+                            (= path (:path %))) resources)]
     (> (count found) 0)))
 
 (defn add-token-handler
@@ -97,9 +97,7 @@
 (defn matching
   "Returns all matching resources in the resources atom."
   [resources predicate]
-  (let [all (concat (:stylesheet @resources)
-                    (:javascript @resources)
-                    (:icon @resources))]
+  (let [all (:resources @resources)]
     (filter #(predicate (:opts %)) all)))
 
 (defn ->html
@@ -118,8 +116,8 @@
 (defn ->stylesheet-html [resources] (->html resources (fn [x] (= :stylesheet (:type x)))))
 
 (comment
-  (let [resources (core/fresh-resource-collection)]
-    (core/add-resource resources :javascript "foobar")
-    (core/add-resource resources :stylesheet "barbaz")
+  (let [resources (fresh-resource-collection)]
+    (add-resource resources :javascript "foobar")
+    (add-resource resources :stylesheet "barbaz")
     (let [bonk (str "hey there " (helpers/javascript-resources) " bastards")]
-      (core/replace-tokens resources bonk))))
+      (replace-tokens resources bonk))))

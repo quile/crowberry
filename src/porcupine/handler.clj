@@ -25,9 +25,9 @@
 (defn foo
   []
   (let [resources (porcupine/fresh-resource-collection)
-        help! (curry-helpers (helpers/all-helpers) resources)]
-    (-> help! :add-resource (apply [:javascript "arse"]))
-    (-> help! :add-resource (apply [:stylesheet "bandit"]))
+        help (curry-helpers (helpers/all-helpers) resources)]
+    (-> help :add-resource (apply [:javascript "arse"]))
+    (-> help :add-resource (apply [:stylesheet "bandit"]))
     @resources))
 
 ;;;(foo)

@@ -20,12 +20,12 @@
                                   "</body></html>")
                     final (core/replace-tokens resources template)
                     expected "<html><head>
+<script type=\"text/javascript\" src=\"bing/BING!.js\"></script>
 <link rel=\"stylesheet\" href=\"zing/zong.css\">
-<link rel=\"stylesheet\" href=\"zing/zang.css\">
-<script type=\"text/javascript\" src=\"bing/BING!.js\"></script></head>
+<link rel=\"stylesheet\" href=\"zing/zang.css\"></head>
 <body>blah blah
-<link rel=\"stylesheet\" href=\"zing/ZING!.css\">
 <script type=\"text/javascript\" src=\"bing/bong.js\"></script>
-<script type=\"text/javascript\" src=\"bing/bang.js\"></script></body></html>"]
+<script type=\"text/javascript\" src=\"bing/bang.js\"></script>
+<link rel=\"stylesheet\" href=\"zing/ZING!.css\"></body></html>"]
                 (is (= final expected)))))))
 

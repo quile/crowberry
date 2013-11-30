@@ -95,9 +95,14 @@
   (swap! resources assoc-in [:tokens token] handler))
 
 (defn matching
-  "Returns all matching resources in the resources atom."
+  "Returns all matching resources in the resources atom.
+   If there are any resources found under the key :output,
+   they will be used, otherwise the original resources will
+   be used untouched."
   [resources predicate]
-  (let [all (:resources @resources)]
+  (let [all (if (empty? (:output @resources))
+              (:resources @resources)
+              (:output @resources))]
     (filter #(predicate (:opts %)) all)))
 
 (defn ->html

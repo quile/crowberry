@@ -2,26 +2,34 @@
   (:require [flatland.ordered.set :as ordered]
             [clojure.string :as string]))
 
-(defprotocol HTML
+(defprotocol Resource
   "Something that can render itself as a tag"
-  (tag [this]))
+  (tag [this])
+  (age-in-seconds [this])
+  (contents [this]))
 
 ;;; This represents a javascript that is to be pulled into the page
 (defrecord ScriptResource [path opts]
-  HTML
+  Resource
+  (age-in-seconds [p] 0)
+  (contents [p] (slurp path))
   (tag [p]
     (str "<script type=\"text/javascript\" "
          "src=\"" (:path p) "\"></script>")))
 
 ;;; This represents a stylesheet that is to be pulled into the page
 (defrecord StylesheetResource [path opts]
-  HTML
+  Resource
+  (age-in-seconds [p] 0)
+  (contents [p] (slurp path))
   (tag [p]
     (str "<link rel=\"stylesheet\" href=\"" (:path p) "\">")))
 
 ;;; This represents a favicon
 (defrecord ShortcutIconResource [path opts]
-  HTML
+  Resource
+  (age-in-seconds [p] 0)
+  (contents [p] (slurp path))
   (tag [p]
        (str "<link rel=\"icon\" href=\"" (:path p) "\">")))
 

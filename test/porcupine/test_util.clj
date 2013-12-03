@@ -3,5 +3,5 @@
 
 (defn harness
   [f]
-  (let [resources (core/fresh-resource-collection)]
+  (let [resources (core/fresh-resource-collection "resources")]
     (f resources)))

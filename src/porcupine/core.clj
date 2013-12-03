@@ -1,18 +1,34 @@
 (ns porcupine.core
   (:require [flatland.ordered.set :as ordered]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [ring.util.response :as response])
+  (:import java.net.URL
+           java.util.Date))
+
+(defn now [] (.getTime (Date.)))
+
+(defn load-resource [path & [opts]]
+  (try
+    (if-let [url (URL. path)]
+      (response/url-response url))
+    (catch Exception e
+      (response/resource-response path opts))))
+
+(defn resource-contents
+  [resource]
+  (slurp (:body resource)))
 
 (defprotocol Resource
   "Something that can render itself as a tag"
   (tag [this])
-  (age-in-seconds [this])
   (contents [this]))
 
 ;;; This represents a javascript that is to be pulled into the page
 (defrecord ScriptResource [path opts]
   Resource
-  (age-in-seconds [p] 0)
-  (contents [p] (slurp path))
+  (contents [p]
+    (when-let [response (load-resource path :root (:root opts))]
+      (resource-contents response)))
   (tag [p]
     (str "<script type=\"text/javascript\" "
          "src=\"" (:path p) "\"></script>")))
@@ -20,23 +36,26 @@
 ;;; This represents a stylesheet that is to be pulled into the page
 (defrecord StylesheetResource [path opts]
   Resource
-  (age-in-seconds [p] 0)
-  (contents [p] (slurp path))
+  (contents [p]
+    (when-let [response (load-resource path :root (:root opts))]
+      (resource-contents response)))
   (tag [p]
     (str "<link rel=\"stylesheet\" href=\"" (:path p) "\">")))
 
 ;;; This represents a favicon
 (defrecord ShortcutIconResource [path opts]
   Resource
-  (age-in-seconds [p] 0)
-  (contents [p] (slurp path))
+  (contents [p]
+    (when-let [response (load-resource path :root (:root opts))]
+      (resource-contents response)))
   (tag [p]
        (str "<link rel=\"icon\" href=\"" (:path p) "\">")))
 
 (defn fresh-resource-collection
   "Returns a new empty collection of page resources"
-  []
+  [resource-dirs]
   (atom {:resources (ordered/ordered-set)
+         :directories resource-dirs
          :tokens {}}))
 
 (defn token-format
@@ -129,7 +148,7 @@
 (defn ->stylesheet-html [resources] (->html resources (fn [x] (= :stylesheet (:type x)))))
 
 (comment
-  (let [resources (fresh-resource-collection)]
+  (let [resources (fresh-resource-collection [])]
     (add-resource resources :javascript "foobar")
     (add-resource resources :stylesheet "barbaz")
     (let [bonk (str "hey there " (helpers/javascript-resources) " bastards")]

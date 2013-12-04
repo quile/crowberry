@@ -20,36 +20,48 @@
 
 (defprotocol Resource
   "Something that can render itself as a tag"
-  (tag [this])
-  (contents [this]))
+  (tag [this]))
 
 ;;; This represents a javascript that is to be pulled into the page
-(defrecord ScriptResource [path opts]
+(defrecord ScriptResource [path contents opts]
   Resource
-  (contents [p]
-    (when-let [response (load-resource path :root (:root opts))]
-      (resource-contents response)))
   (tag [p]
     (str "<script type=\"text/javascript\" "
          "src=\"" (:path p) "\"></script>")))
 
+(defn new-script [path opts]
+  (let [response (load-resource path :root (:root opts))]
+    (ScriptResource. path (if response
+                            (resource-contents response)
+                            nil) (assoc opts :error (format "No such resource: %s" path)))))
+
 ;;; This represents a stylesheet that is to be pulled into the page
-(defrecord StylesheetResource [path opts]
+(defrecord StylesheetResource [path contents opts]
   Resource
-  (contents [p]
-    (when-let [response (load-resource path :root (:root opts))]
-      (resource-contents response)))
   (tag [p]
     (str "<link rel=\"stylesheet\" href=\"" (:path p) "\">")))
 
+(defn new-stylesheet [path opts]
+  (let [response (load-resource path :root (:root opts))]
+    (StylesheetResource. path (if response
+                            (resource-contents response)
+                            nil) (assoc opts :error (format "No such resource: %s" path)))))
+
 ;;; This represents a favicon
-(defrecord ShortcutIconResource [path opts]
+(defrecord ShortcutIconResource [path contents opts]
   Resource
-  (contents [p]
-    (when-let [response (load-resource path :root (:root opts))]
-      (resource-contents response)))
   (tag [p]
        (str "<link rel=\"icon\" href=\"" (:path p) "\">")))
+
+(defn new-shortcut-icon [path opts]
+  (let [response (load-resource path :root (:root opts))]
+    (ShortcutIconResource. path (if response
+                            (resource-contents response)
+                            nil) (assoc opts :error (format "No such resource: %s" path)))))
+
+(def constructors {:javascript new-script
+                    :stylesheet new-stylesheet
+                    :icon new-shortcut-icon})
 
 (defn fresh-resource-collection
   "Returns a new empty collection of page resources"
@@ -87,10 +99,7 @@
                                :footer
                                :header)}
          mopts (merge defaults (assoc opts :type mapped-type))
-         resource-record (condp = mapped-type
-                           :javascript (ScriptResource. resource mopts)
-                           :stylesheet (StylesheetResource. resource mopts)
-                           :icon (ShortcutIconResource. resource mopts))]
+         resource-record ((get constructors mapped-type) resource mopts)]
      (swap! resources
       (fn thingy [s t p]
         (update-in s [t] conj p)) :resources resource-record))))

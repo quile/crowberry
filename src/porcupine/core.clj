@@ -18,6 +18,21 @@
   [resource]
   (slurp (:body resource)))
 
+;; found this on stackoverflow:
+(defn record-factory [recordname]
+  (let [recordclass ^Class (resolve (symbol recordname))
+        max-arg-count (apply max (map #(count (.getParameterTypes %))
+                                      (.getConstructors recordclass)))
+        args (map #(symbol (str "x" %)) (range (- max-arg-count 2)))]
+    (eval `(fn [~@args] (new ~(symbol recordname) ~@args)))))
+
+(defn new-resource [factory path opts]
+  "Create a new resource record using the appropriate factory, and populate
+   its content from the file system or over the interwebs."
+  (if-let [response (load-resource path opts)]
+    (factory path (resource-contents response) opts)
+    (factory path nil (assoc opts :error (format "No such resource: %s" path)))))
+
 (defprotocol Resource
   "Something that can render itself as a tag"
   (tag [this]))
@@ -29,11 +44,9 @@
     (str "<script type=\"text/javascript\" "
          "src=\"" (:path p) "\"></script>")))
 
+(def script-factory (record-factory "ScriptResource"))
 (defn new-script [path opts]
-  (let [response (load-resource path :root (:root opts))]
-    (ScriptResource. path (if response
-                            (resource-contents response)
-                            nil) (assoc opts :error (format "No such resource: %s" path)))))
+  (new-resource script-factory path opts))
 
 ;;; This represents a stylesheet that is to be pulled into the page
 (defrecord StylesheetResource [path contents opts]
@@ -41,11 +54,9 @@
   (tag [p]
     (str "<link rel=\"stylesheet\" href=\"" (:path p) "\">")))
 
+(def stylesheet-factory (record-factory "StylesheetResource"))
 (defn new-stylesheet [path opts]
-  (let [response (load-resource path :root (:root opts))]
-    (StylesheetResource. path (if response
-                            (resource-contents response)
-                            nil) (assoc opts :error (format "No such resource: %s" path)))))
+  (new-resource stylesheet-factory path opts))
 
 ;;; This represents a favicon
 (defrecord ShortcutIconResource [path contents opts]
@@ -53,11 +64,9 @@
   (tag [p]
        (str "<link rel=\"icon\" href=\"" (:path p) "\">")))
 
+(def shortcut-icon-factory (record-factory "ShortcutIconResource"))
 (defn new-shortcut-icon [path opts]
-  (let [response (load-resource path :root (:root opts))]
-    (ShortcutIconResource. path (if response
-                            (resource-contents response)
-                            nil) (assoc opts :error (format "No such resource: %s" path)))))
+  (new-resource shortcut-icon-factory path opts))
 
 (def constructors {:javascript new-script
                     :stylesheet new-stylesheet

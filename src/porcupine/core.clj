@@ -9,7 +9,7 @@
 
 (defn load-resource [path & [opts]]
   (try
-    (if-let [url (URL. path)]
+    (let [url (URL. path)]
       (response/url-response url))
     (catch Exception e
       (response/resource-response path opts))))

@@ -1,6 +1,8 @@
 (ns porcupine.transforms
+  (:require [porcupine.core :as core])
   (:import ro.isdc.wro.model.resource.Resource
            ro.isdc.wro.extensions.processor.js.UglifyJsProcessor
+           ro.isdc.wro.extensions.processor.js.BeautifyJsProcessor
            ro.isdc.wro.extensions.processor.js.JsLintProcessor
            ro.isdc.wro.extensions.processor.js.JsHintProcessor
            ro.isdc.wro.model.resource.processor.impl.js.ConsoleStripperProcessor
@@ -10,23 +12,14 @@
 (defn transform-all
   [f resources]
   (let [out (map f resources)]
-    (into [] (map (fn [r o] (assoc r :contents o)) resources out))))
-
-(defn fake-resource
-  [resource]
-  (let [ty (get-in resource [:opts :type])]
-    (cond
-      (= ty :javascript) "foo.js"
-      (= ty :stylesheet) "bar.css"
-      (= ty :icon)       "baz.ico"
-      :else              "quux.js")))
+    (into [] (map (fn [r o] (assoc r :content o)) resources out))))
 
 (defn process
   [resource processor]
   (let [writer (StringWriter.)]
     (.process processor
-              (Resource/create (fake-resource resource))
-              (StringReader. (:contents resource))
+              (Resource/create (:path resource))
+              (StringReader. (core/contents resource))
               writer)
     (str (.getBuffer writer))))
 
@@ -41,6 +34,7 @@
 ;; TODO - these need a protocol
 
 (def uglify-js-processor (UglifyJsProcessor.))
+(def beautify-js-processor (BeautifyJsProcessor.))
 (def jslint-processor (proxy [JsLintProcessor] []
                        (onLinterException [e r] (println (.getErrors e) r))))
 (def jshint-processor (proxy [JsHintProcessor] []
@@ -55,6 +49,15 @@
   "Uglifies its input."
   [resources]
   (transform-all uglify-resource resources))
+
+(defn beautify-resource
+  [resource]
+  (process resource beautify-js-processor))
+
+(defn beautify
+  "Beautifies its input."
+  [resources]
+  (transform-all beautify-resource resources))
 
 (defn jslint-resource
   [resource]
@@ -83,4 +86,12 @@
   [resources]
   (transform-all console-strip-resource resources))
 
-;; ... other processors/compilers here
+(defn concatenator
+  "Concatenates files together"
+  [resources]
+  (let [ty (-> resources first :opts :type)
+        _ (println "concatenating to " ty)
+        content (apply str (map core/contents resources))
+        _ (print "content is " content)
+        result (core/construct-resource ty nil {})]
+    (assoc result :content content)))

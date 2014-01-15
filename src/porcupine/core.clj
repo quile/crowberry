@@ -7,6 +7,10 @@
 
 (defn now [] (.getTime (Date.)))
 
+(defn maybe-deref
+  [thing]
+  (if (instance? clojure.lang.IDeref thing) @thing thing))
+
 (defn load-resource [path & [opts]]
   (try
     (let [url (URL. path)]
@@ -14,7 +18,7 @@
     (catch Exception e
       (response/resource-response path opts))))
 
-(defn resource-contents
+(defn resource-content
   [resource]
   (slurp (:body resource)))
 
@@ -30,47 +34,51 @@
   "Create a new resource record using the appropriate factory, and populate
    its content from the file system or over the interwebs."
   (if-let [response (load-resource path opts)]
-    (factory path (resource-contents response) opts)
+    (factory path (delay (resource-content response)) opts)
     (factory path nil (assoc opts :error (format "No such resource: %s" path)))))
 
 (defprotocol Resource
   "Something that can render itself as a tag"
-  (tag [this]))
+  (tag [this])
+  (contents [this]))
 
 ;;; This represents a javascript that is to be pulled into the page
-(defrecord ScriptResource [path contents opts]
+(defrecord ScriptResource [path content opts]
   Resource
   (tag [p]
     (str "<script type=\"text/javascript\" "
-         "src=\"" (:path p) "\"></script>")))
+         "src=\"" (:path p) "\"></script>"))
+  (contents [p] (maybe-deref (:content p))))
 
 (def script-factory (record-factory "ScriptResource"))
 (defn new-script [path opts]
   (new-resource script-factory path opts))
 
 ;;; This represents a stylesheet that is to be pulled into the page
-(defrecord StylesheetResource [path contents opts]
+(defrecord StylesheetResource [path content opts]
   Resource
   (tag [p]
-    (str "<link rel=\"stylesheet\" href=\"" (:path p) "\">")))
+    (str "<link rel=\"stylesheet\" href=\"" (:path p) "\">"))
+  (contents [p] (maybe-deref (:content p))))
 
 (def stylesheet-factory (record-factory "StylesheetResource"))
 (defn new-stylesheet [path opts]
   (new-resource stylesheet-factory path opts))
 
 ;;; This represents a favicon
-(defrecord ShortcutIconResource [path contents opts]
+(defrecord ShortcutIconResource [path content opts]
   Resource
   (tag [p]
-       (str "<link rel=\"icon\" href=\"" (:path p) "\">")))
+       (str "<link rel=\"icon\" href=\"" (:path p) "\">"))
+  (contents [p] (maybe-deref (:content p))))
 
 (def shortcut-icon-factory (record-factory "ShortcutIconResource"))
 (defn new-shortcut-icon [path opts]
   (new-resource shortcut-icon-factory path opts))
 
 (def constructors {:javascript new-script
-                    :stylesheet new-stylesheet
-                    :icon new-shortcut-icon})
+                   :stylesheet new-stylesheet
+                   :icon new-shortcut-icon})
 
 (defn fresh-resource-collection
   "Returns a new empty collection of page resources"
@@ -97,22 +105,25 @@
      source
      resolutions)))
 
+(defn construct-resource
+  [resource-type path opts]
+  (let [mapped-type (if (or (= :shortcut resource-type)
+                            (= :shortcut-icon resource-type))
+                      :icon
+                      resource-type)
+        defaults {:location (if (= :javascript mapped-type)
+                              :footer
+                              :header)}
+        mopts (merge defaults (assoc opts :type mapped-type))]
+    ((get constructors mapped-type) path mopts)))
+
 (defn add-resource
   "Add a resource to the resources atom."
-  ([resources resource-type resource] (add-resource resources resource-type resource {}))
-  ([resources resource-type resource opts]
-   (let [mapped-type (if (or (= :shortcut resource-type)
-                             (= :shortcut-icon resource-type))
-                       :icon
-                       resource-type)
-         defaults {:location (if (= :javascript mapped-type)
-                               :footer
-                               :header)}
-         mopts (merge defaults (assoc opts :type mapped-type))
-         resource-record ((get constructors mapped-type) resource mopts)]
-     (swap! resources
-      (fn thingy [s t p]
-        (update-in s [t] conj p)) :resources resource-record))))
+  ([resources resource-type path] (add-resource resources resource-type path {}))
+  ([resources resource-type path opts]
+  (swap! resources
+   (fn thingy [s t p]
+    (update-in s [t] conj p)) :resources (construct-resource resource-type path opts))))
 
 (defn remove-resource
   "Remove a resource that's been added already. This can be

@@ -7,7 +7,8 @@
   (has? [this key])
   (purge [this])
   (expired? [this key])
-  (cset [this key val] [this key val opts]))
+  (cset [this key val] [this key val opts])
+  (hide [this val]))
 
 (defrecord MapCache [a]
   Cache
@@ -33,8 +34,13 @@
             seconds (.getTime now)
             expiration (+ seconds (* 1000 timeout))]
         (swap! a assoc-in [:timeout key] expiration))
-      (swap! a assoc-in [:timeout key] nil))))
-
+      (swap! a assoc-in [:timeout key] nil)))
+  (hide [c value]
+    (hide c value {}))
+  (hide [c value opts]
+    (let [key (java.util.UUID/randomUUID)]
+      (cset c key value opts)
+      key)))
 
 (defn map-cache []
   (MapCache. (atom {})))

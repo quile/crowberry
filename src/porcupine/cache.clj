@@ -8,21 +8,21 @@
   (purge [this])
   (expired? [this key])
   (cset [this key val] [this key val opts])
-  (hide [this val]))
+  (hide [this val] [this val opts]))
 
 (defrecord MapCache [a]
   Cache
   (cget [c key]
     (when-not (expired? c key)
-      (-> @a :cache key)))
+      (-> @a :cache (get key))))
   (expired? [c key]
-    (if-let [exp (-> @a :timeout key)]
+    (if-let [exp (-> @a :timeout (get key))]
       (let [now (Date.)
             seconds (.getTime now)]
         (> seconds exp))
       false))
   (has? [this key]
-    (contains? (-> @a :cache) key))
+    (contains? (-> @a :cache) (get key)))
   (purge [this]
     (reset! a {:cache {} :timeout {}}))
   (cset [c key value]

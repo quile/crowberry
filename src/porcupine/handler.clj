@@ -20,9 +20,9 @@
     (swap! resources assoc :output transformed)))
 
 (defn wrap-page-resources
-  [handler resource-dir]
+  [handler & [opts]]
   (fn [request]
-    (let [page-resources (porcupine/fresh-resource-collection [resource-dir])
+    (let [page-resources (porcupine/fresh-resource-collection opts)
           curried-helpers (curry-helpers (helpers/all-helpers) page-resources)
           response (handler (merge (assoc request :page-resources page-resources) curried-helpers))]
       (if-let [body (:body response)]
@@ -41,4 +41,4 @@
     (transform! resources)
     @resources))
 
-(foo)
+(comment (foo))

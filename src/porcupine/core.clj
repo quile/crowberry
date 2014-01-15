@@ -74,10 +74,11 @@
 
 (defn fresh-resource-collection
   "Returns a new empty collection of page resources"
-  [resource-dirs]
-  (atom {:resources (ordered/ordered-set)
-         :directories resource-dirs
-         :tokens {}}))
+  ([] (fresh-resource-collection {}))
+  ([opts]
+    (atom {:resources (ordered/ordered-set)
+           :tokens {}
+           :opts opts})))
 
 (defn token-format
   "This is how resources are injected into HTML, to be replaced after rendering."
@@ -166,8 +167,8 @@
 (defn ->stylesheet-html [resources] (->html resources (fn [x] (= :stylesheet (:type x)))))
 
 (comment
-  (let [resources (fresh-resource-collection [])]
+  (let [resources (fresh-resource-collection)]
     (add-resource resources :javascript "foobar")
     (add-resource resources :stylesheet "barbaz")
-    (let [bonk (str "hey there " (helpers/javascript-resources) " bastards")]
+    (let [bonk (str "hey there " (helpers/javascript-resources) " fiddly bits")]
       (replace-tokens resources bonk))))

@@ -19,7 +19,7 @@
   (let [writer (StringWriter.)]
     (.process processor
               (Resource/create (:path resource))
-              (StringReader. (core/contents resource))
+              (StringReader. (core/resource-content resource))
               writer)
     (str (.getBuffer writer))))
 
@@ -27,7 +27,7 @@
 ;; these functions must take a vector of resources
 ;; and return a vector of transformed resources
 
-(defn identity
+(defn ident
   "Returns its input."
   [resources] resources)
 
@@ -91,7 +91,7 @@
   [resources]
   (let [ty (-> resources first :opts :type)
         _ (println "concatenating to " ty)
-        content (apply str (map core/contents resources))
+        content (apply str (map core/resource-content resources))
         _ (print "content is " content)
         result (core/construct-resource ty nil {})]
     (assoc result :content content)))

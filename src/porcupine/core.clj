@@ -7,10 +7,6 @@
 
 (defn now [] (.getTime (Date.)))
 
-(defn maybe-deref
-  [thing]
-  (if (instance? clojure.lang.IDeref thing) @thing thing))
-
 (defn load-resource [path & [opts]]
   (try
     (let [url (URL. path)]
@@ -39,16 +35,14 @@
 
 (defprotocol Resource
   "Something that can render itself as a tag"
-  (tag [this])
-  (contents [this]))
+  (tag [this]))
 
 ;;; This represents a javascript that is to be pulled into the page
 (defrecord ScriptResource [path content opts]
   Resource
   (tag [p]
     (str "<script type=\"text/javascript\" "
-         "src=\"" (:path p) "\"></script>"))
-  (contents [p] (maybe-deref (:content p))))
+         "src=\"" (:path p) "\"></script>")))
 
 (def script-factory (record-factory "ScriptResource"))
 (defn new-script [path opts]
@@ -58,8 +52,7 @@
 (defrecord StylesheetResource [path content opts]
   Resource
   (tag [p]
-    (str "<link rel=\"stylesheet\" href=\"" (:path p) "\">"))
-  (contents [p] (maybe-deref (:content p))))
+    (str "<link rel=\"stylesheet\" href=\"" (:path p) "\">")))
 
 (def stylesheet-factory (record-factory "StylesheetResource"))
 (defn new-stylesheet [path opts]
@@ -69,8 +62,7 @@
 (defrecord ShortcutIconResource [path content opts]
   Resource
   (tag [p]
-       (str "<link rel=\"icon\" href=\"" (:path p) "\">"))
-  (contents [p] (maybe-deref (:content p))))
+       (str "<link rel=\"icon\" href=\"" (:path p) "\">")))
 
 (def shortcut-icon-factory (record-factory "ShortcutIconResource"))
 (defn new-shortcut-icon [path opts]

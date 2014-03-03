@@ -1,6 +1,7 @@
 (ns porcupine.handler
   (:require [porcupine.core :as porcupine]
             [porcupine.helpers :as helpers]
+            [porcupine.cache :as cache]
             [porcupine.transforms :as transforms]))
 
 
@@ -14,9 +15,17 @@
 
 (defn transform!
   [resources]
-  (let [input (-> @resources :resources)
-        transformed (-> input
-                        (transforms/identity))]
+  (let [resource-cache (or (-> @resources :opts :cache)
+                           (cache/make-null-cache))
+        transformers (or (-> @resources :opts :transformers) {})
+        input (-> @resources :resources)
+        transformed  (into {} (for [[ty res] input]
+                                (let [_ (println ty)
+                                      transform (get transformers ty transforms/ident)
+                                      _ (println transform)
+                                      transformed (-> input transform)]
+                                [ty transformed])))
+        _ (println transformed)]
     (swap! resources assoc :output transformed)))
 
 (defn wrap-page-resources

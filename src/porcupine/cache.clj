@@ -44,3 +44,17 @@
 
 (defn map-cache []
   (MapCache. (atom {})))
+
+(defrecord NullCache []
+  Cache
+  (cget [c key] nil)
+  (expired? [c key] false)
+  (has? [c key] false)
+  (purge [c])
+  (cset [c key value])
+  (cset [c key value opts])
+  (hide [c value])
+  (hide [c value opts]))
+
+(defn make-null-cache []
+  (NullCache.))
